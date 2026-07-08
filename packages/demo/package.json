@@ -1,0 +1,25 @@
+{
+  "name": "@worksplit/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "dev": "vite --host 0.0.0.0",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint -c ../../oxlint.config.ts . --deny-warnings",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.3",
+    "@worksplit/react": "workspace:*",
+    "lucide-react": "^1.23.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "vite": "^8.1.3"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,14 @@
+From: operations@example.com
+To: reviewer@example.com
+Subject: Office preview review packet
+Date: Tue, 07 Jul 2026 08:00:00 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Please review the attached office preview workflow. The demo focuses on Word, PDF, Excel, PowerPoint, image and email files.
+
+Checklist:
+- Search text in Word and PDF
+- Switch worksheets in Excel
+- Preview the slide deck
+- Inspect this email body

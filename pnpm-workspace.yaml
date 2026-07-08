@@ -1,0 +1,26 @@
+packages:
+  - "app"
+  - "packages/*"
+allowBuilds:
+  core-js: false
+  es5-ext: false
+minimumReleaseAgeExclude:
+  - "@turbo/darwin-64@2.10.3"
+  - "@turbo/darwin-arm64@2.10.3"
+  - "@turbo/linux-64@2.10.3"
+  - "@turbo/linux-arm64@2.10.3"
+  - "@turbo/windows-64@2.10.3"
+  - "@turbo/windows-arm64@2.10.3"
+  - turbo@2.10.3
+  - "@file-viewer/core@2.1.23"
+  - "@file-viewer/doc@2.1.23"
+  - "@file-viewer/pptx@2.1.23"
+  - "@file-viewer/preset-office@2.1.23"
+  - "@file-viewer/react@2.1.23"
+  - "@file-viewer/renderer-ofd@2.1.23"
+  - "@file-viewer/renderer-pdf@2.1.23"
+  - "@file-viewer/renderer-presentation@2.1.23"
+  - "@file-viewer/renderer-spreadsheet@2.1.23"
+  - "@file-viewer/renderer-word@2.1.23"
+  - "@file-viewer/renderer-email@2.1.23"
+  - "@file-viewer/renderer-image@2.1.23"
