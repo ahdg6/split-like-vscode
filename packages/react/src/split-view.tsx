@@ -197,6 +197,9 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
 
     const publishLayout = useCallback(
       (next: SplitLayout) => {
+        if (sameSplitLayout(layoutRef.current, next)) {
+          return;
+        }
         layoutRef.current = next;
         sizeSnapshotRef.current = mergeVisibleSizes(sizeSnapshotRef.current, next);
         setLayout(next);
@@ -390,7 +393,10 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
       if (!visibilityChanged) {
         sizeSnapshotRef.current = mergeVisibleSizes(sizeSnapshotRef.current, next);
       }
-      setLayout(next);
+      if (!sameSplitLayout(current, next)) {
+        layoutRef.current = next;
+        setLayout(next);
+      }
     }, [containerSize, paneModels, proportionalResize]);
 
     useEffect(() => () => dragCleanupRef.current?.(), []);
@@ -938,6 +944,39 @@ function keyToDeltaDirection(key: string, orientation: SplitOrientation): -1 | 0
 function sameSizes(left: readonly number[] | undefined, right: readonly number[]): boolean {
   return Boolean(
     left && left.length === right.length && left.every((size, index) => size === right[index]),
+  );
+}
+
+function sameSplitLayout(left: SplitLayout | null, right: SplitLayout): boolean {
+  return Boolean(
+    left &&
+    left.containerSize === right.containerSize &&
+    left.contentSize === right.contentSize &&
+    sameSizes(left.sizes, right.sizes) &&
+    sameSizes(left.offsets, right.offsets) &&
+    sameIds(left.visibleIds, right.visibleIds) &&
+    samePaneSnapshots(left.panes, right.panes),
+  );
+}
+
+function samePaneSnapshots(left: readonly PaneSnapshot[], right: readonly PaneSnapshot[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((pane, index) => {
+      const next = right[index];
+      return (
+        Boolean(next) &&
+        pane.id === next.id &&
+        pane.collapsedSize === next.collapsedSize &&
+        pane.defaultSize === next.defaultSize &&
+        pane.maxSize === next.maxSize &&
+        pane.minSize === next.minSize &&
+        pane.offset === next.offset &&
+        pane.priority === next.priority &&
+        pane.size === next.size &&
+        pane.visible === next.visible
+      );
+    })
   );
 }
 

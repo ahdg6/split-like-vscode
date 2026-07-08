@@ -27,6 +27,40 @@ describe("@worksplit/react", () => {
     expect(screen.getByText("Right")).toBeTruthy();
   });
 
+  it("does not schedule a layout update for equivalent pane declarations after rerender", async () => {
+    const handle = createRef<SplitViewHandle>();
+    const renderPane = vi.fn<(name: string) => void>();
+
+    function PaneContent(props: { readonly name: string }) {
+      renderPane(props.name);
+      return <span>{props.name}</span>;
+    }
+
+    function Fixture(props: { readonly version: number }) {
+      return (
+        <div data-version={props.version} style={{ height: 400, width: 800 }}>
+          <SplitView ref={handle}>
+            <Pane id="left" defaultSize={300} minSize={100}>
+              <PaneContent name="Left" />
+            </Pane>
+            <Pane id="right" defaultSize="1fr" minSize={100}>
+              <PaneContent name="Right" />
+            </Pane>
+          </SplitView>
+        </div>
+      );
+    }
+
+    const { rerender } = render(<Fixture version={1} />);
+
+    await waitFor(() => expect(handle.current?.getLayout()?.sizes).toEqual([300, 500]));
+    renderPane.mockClear();
+
+    rerender(<Fixture version={2} />);
+
+    expect(renderPane.mock.calls.map(([name]) => name)).toEqual(["Left", "Right"]);
+  });
+
   it("resizes panes from the keyboard", () => {
     const onLayoutChange = vi.fn<NonNullable<ComponentProps<typeof SplitView>["onLayoutChange"]>>();
 
