@@ -10,9 +10,11 @@
     "packages/demo/vite.config.ts",
     "oxlint.config.ts",
     "packages/core/src",
-    "packages/core/vite.config.ts",
+    "packages/core/tsdown.config.mts",
+    "packages/core/vitest.config.mts",
     "packages/react/src",
-    "packages/react/vite.config.ts",
+    "packages/react/tsdown.config.mts",
+    "packages/react/vitest.config.mts",
     "vite.config.ts"
   ]
 }

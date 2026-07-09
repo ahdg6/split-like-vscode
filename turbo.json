@@ -5,12 +5,14 @@
     "pnpm-lock.yaml",
     "tsconfig.base.json",
     "tsconfig.typecheck.json",
-    "vite.config.ts"
+    "vite.config.ts",
+    "packages/*/tsdown.config.mts",
+    "packages/*/vitest.config.mts"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "tsconfig.build.tsbuildinfo"]
+      "outputs": ["dist/**"]
     },
     "dev": {
       "cache": false,
