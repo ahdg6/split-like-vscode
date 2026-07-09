@@ -179,12 +179,17 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     const [visibility, setVisibility] = useState<Record<string, boolean>>({});
 
     const paneElements = useMemo(() => collectPanes(children), [children]);
+    const paneModelSignature = useMemo(
+      () => createPaneModelSignature(paneElements),
+      [paneElements],
+    );
+    const paneModelElements = useStablePaneModelElements(paneElements, paneModelSignature);
     const panesById = useMemo(
       () => new Map(paneElements.map((pane) => [pane.props.id, pane])),
       [paneElements],
     );
     const paneModels = useMemo<PaneConstraints[]>(() => {
-      return paneElements.map((pane, index) => ({
+      return paneModelElements.map((pane, index) => ({
         id: pane.props.id || `pane-${index}`,
         minSize: pane.props.minSize,
         maxSize: pane.props.maxSize,
@@ -193,7 +198,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
         priority: pane.props.priority,
         visible: resolvePaneVisible(pane, visibility),
       }));
-    }, [paneElements, visibility]);
+    }, [paneModelElements, visibility]);
 
     const publishLayout = useCallback(
       (next: SplitLayout) => {
@@ -862,6 +867,38 @@ function collectPanes(children: ReactNode): PaneElement[] {
       ? [child as PaneElement]
       : [];
   });
+}
+
+function createPaneModelSignature(panes: readonly PaneElement[]): string {
+  return panes
+    .map((pane, index) => {
+      const props = pane.props;
+      const id = props.id || `pane-${index}`;
+      return [
+        id,
+        props.minSize,
+        props.maxSize,
+        props.collapsedSize,
+        props.defaultSize,
+        props.defaultVisible,
+        props.priority,
+        props.visible,
+      ]
+        .map((value) => String(value))
+        .join(":");
+    })
+    .join("|");
+}
+
+function useStablePaneModelElements(
+  paneElements: readonly PaneElement[],
+  signature: string,
+): readonly PaneElement[] {
+  const ref = useRef<{ elements: readonly PaneElement[]; signature: string } | null>(null);
+  if (!ref.current || ref.current.signature !== signature) {
+    ref.current = { elements: paneElements, signature };
+  }
+  return ref.current.elements;
 }
 
 function resolvePaneVisible(pane: PaneElement, visibility: Record<string, boolean>): boolean {

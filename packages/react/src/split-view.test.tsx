@@ -61,6 +61,35 @@ describe("@worksplit/react", () => {
     expect(renderPane.mock.calls.map(([name]) => name)).toEqual(["Left", "Right"]);
   });
 
+  it("does not recreate layout when only pane children change", async () => {
+    const handle = createRef<SplitViewHandle>();
+
+    function Fixture(props: { readonly version: number }) {
+      return (
+        <div style={{ height: 400, width: 800 }}>
+          <SplitView ref={handle}>
+            <Pane id="left" defaultSize={300} minSize={100}>
+              Left {props.version}
+            </Pane>
+            <Pane id="right" defaultSize="1fr" minSize={100}>
+              Right {props.version}
+            </Pane>
+          </SplitView>
+        </div>
+      );
+    }
+
+    const { rerender } = render(<Fixture version={1} />);
+
+    await waitFor(() => expect(handle.current?.getLayout()?.sizes).toEqual([300, 500]));
+    const initialLayout = handle.current?.getLayout();
+
+    rerender(<Fixture version={2} />);
+
+    expect(screen.getByText("Left 2")).toBeTruthy();
+    expect(handle.current?.getLayout()).toBe(initialLayout);
+  });
+
   it("resizes panes from the keyboard", () => {
     const onLayoutChange = vi.fn<NonNullable<ComponentProps<typeof SplitView>["onLayoutChange"]>>();
 
