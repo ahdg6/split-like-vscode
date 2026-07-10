@@ -990,9 +990,21 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(
         {showActivity && (
           <nav aria-label="Workbench views" className="worksplit-workbench-activity">
             {orderedViews.map((view) => {
-              const active = currentValue.activeByPart[view.part] === view.id;
+              const activityCommand =
+                typeof view.meta?.["activityCommand"] === "string"
+                  ? view.meta["activityCommand"]
+                  : "";
+              const active = activityCommand
+                ? false
+                : currentValue.activeByPart[view.part] === view.id;
               const visible = active && currentValue.visibleParts[view.part];
-              const activate = () => toggleView(view.id);
+              const activate = () => {
+                if (activityCommand) {
+                  runCommand(activityCommand);
+                  return;
+                }
+                toggleView(view.id);
+              };
               const part = view.part;
               const icon = renderWorkbenchIcon(view.icon);
               const publicView = toPublicView(view);
