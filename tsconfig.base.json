@@ -11,11 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@worksplit/core": ["packages/core/src/index.ts"],
-      "@worksplit/react": ["packages/react/src/index.ts"]
+      "@worksplit/core": ["./packages/core/src/index.ts"],
+      "@worksplit/react": ["./packages/react/src/index.ts"]
     },
     "resolveJsonModule": true,
     "isolatedModules": true,
