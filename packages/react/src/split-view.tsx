@@ -40,16 +40,16 @@ const DEFAULT_SNAP_INTENT_THRESHOLD = 2;
 export interface PaneProps extends HTMLAttributes<HTMLDivElement> {
   id: string;
   children: ReactNode;
-  minSize?: number;
-  maxSize?: number;
-  defaultSize?: PaneSizeValue;
-  defaultVisible?: boolean;
-  priority?: PaneConstraints["priority"];
-  collapsedSize?: number;
-  visible?: boolean;
-  snap?: boolean;
-  snapThreshold?: number;
-  snapCollapseDelay?: number;
+  minSize?: number | undefined;
+  maxSize?: number | undefined;
+  defaultSize?: PaneSizeValue | undefined;
+  defaultVisible?: boolean | undefined;
+  priority?: PaneConstraints["priority"] | undefined;
+  collapsedSize?: number | undefined;
+  visible?: boolean | undefined;
+  snap?: boolean | undefined;
+  snapThreshold?: number | undefined;
+  snapCollapseDelay?: number | undefined;
 }
 
 export interface SplitViewHandle {
@@ -100,8 +100,8 @@ export interface SplitViewProps extends Omit<
   "children" | "onChange"
 > {
   children: ReactNode;
-  orientation?: SplitOrientation;
-  defaultSizeById?: Record<string, number | undefined>;
+  orientation?: SplitOrientation | undefined;
+  defaultSizeById?: Record<string, number | undefined> | undefined;
   sashSize?: number;
   disabled?: boolean;
   proportionalResize?: boolean;
@@ -167,8 +167,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
       sashIndex: number;
       startPosition: number;
       startLayout: SplitLayout;
-      snapBefore?: DragSnapState;
-      snapAfter?: DragSnapState;
+      snapBefore?: DragSnapState | undefined;
+      snapAfter?: DragSnapState | undefined;
     } | null>(null);
     const dragCleanupRef = useRef<(() => void) | null>(null);
     const defaultSizeByIdRef = useRef<Record<string, number>>(compactSizeSnapshot(defaultSizeById));
@@ -275,7 +275,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           });
           const restoredSize = size ?? nextSizeSnapshot[id];
           publishLayout(
-            Number.isFinite(restoredSize)
+            typeof restoredSize === "number" && Number.isFinite(restoredSize)
               ? setPaneSize(revealedLayout, id, restoredSize)
               : revealedLayout,
           );
@@ -616,7 +616,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
         })}
         {layout?.items.slice(0, -1).map((item, index) => (
           <div
-            aria-controls={`${item.id} ${layout.items[index + 1].id}`}
+            aria-controls={`${item.id} ${layout.items[index + 1]!.id}`}
             aria-disabled={disabled || undefined}
             aria-label="Resize pane"
             aria-orientation={orientation === "horizontal" ? "vertical" : "horizontal"}
@@ -629,16 +629,16 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
             onKeyDown={(event) => handleSashKeyDown(index, event)}
             onPointerDown={(event) => startDrag(index, event)}
             role="separator"
-            style={sashStyle(orientation, layout.offsets[index + 1], sashSize)}
+            style={sashStyle(orientation, layout.offsets[index + 1]!, sashSize)}
             tabIndex={disabled ? -1 : 0}
           >
             {renderSash?.({
-              afterId: layout.items[index + 1].id,
+              afterId: layout.items[index + 1]!.id,
               beforeId: item.id,
               disabled,
               index,
               layout,
-              offset: layout.offsets[index + 1],
+              offset: layout.offsets[index + 1]!,
               orientation,
             })}
           </div>
@@ -746,7 +746,7 @@ function findVisiblePane(
 ): PaneSnapshot | undefined {
   for (let index = startIndex + step; index >= 0 && index < panes.length; index += step) {
     const pane = panes[index];
-    if (pane.visible) {
+    if (pane?.visible) {
       return pane;
     }
   }
@@ -829,7 +829,10 @@ function shouldRevealSnap(snap: DragSnapState, delta: number): boolean {
 }
 
 function clearDragSnapTimers(
-  drag: { snapBefore?: DragSnapState; snapAfter?: DragSnapState } | null,
+  drag: {
+    snapBefore?: DragSnapState | undefined;
+    snapAfter?: DragSnapState | undefined;
+  } | null,
 ): void {
   clearDragSnapTimer(drag?.snapBefore);
   clearDragSnapTimer(drag?.snapAfter);
@@ -905,8 +908,9 @@ function resolvePaneVisible(pane: PaneElement, visibility: Record<string, boolea
   if (pane.props.visible !== undefined) {
     return pane.props.visible;
   }
-  if (visibility[pane.props.id] !== undefined) {
-    return visibility[pane.props.id];
+  const stored = visibility[pane.props.id];
+  if (stored !== undefined) {
+    return stored;
   }
   return pane.props.defaultVisible !== false;
 }
@@ -1001,8 +1005,10 @@ function samePaneSnapshots(left: readonly PaneSnapshot[], right: readonly PaneSn
     left.length === right.length &&
     left.every((pane, index) => {
       const next = right[index];
+      if (!next) {
+        return false;
+      }
       return (
-        Boolean(next) &&
         pane.id === next.id &&
         pane.collapsedSize === next.collapsedSize &&
         pane.defaultSize === next.defaultSize &&
@@ -1043,7 +1049,7 @@ function restoreNewlyVisiblePaneSizes(
       return previousPane.id === pane.id && previousPane.visible;
     });
     const snapshot = snapshots[pane.id];
-    if (pane.visible && !wasVisible && Number.isFinite(snapshot)) {
+    if (pane.visible && !wasVisible && typeof snapshot === "number" && Number.isFinite(snapshot)) {
       restored = setPaneSize(restored, pane.id, snapshot);
     }
   }

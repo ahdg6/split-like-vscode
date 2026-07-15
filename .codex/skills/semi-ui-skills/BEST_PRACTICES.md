@@ -9,7 +9,7 @@
 直接按需引入组件，无需额外配置：
 
 ```jsx
-import { Button, Input, Table, Form, Modal } from '@douyinfe/semi-ui';
+import { Button, Input, Table, Form, Modal } from "@douyinfe/semi-ui";
 ```
 
 Semi Design 的构建产物已内置按需加载支持，无需配置 babel-plugin-import 或其他插件。
@@ -17,16 +17,17 @@ Semi Design 的构建产物已内置按需加载支持，无需配置 babel-plug
 ### 图标引入
 
 ```jsx
-import { IconUser, IconHome, IconSearch } from '@douyinfe/semi-icons';
+import { IconUser, IconHome, IconSearch } from "@douyinfe/semi-icons";
 ```
 
-使用 tool  get_semi_document 传入 Icon 来查看所有可用的 icon
+使用 tool get_semi_document 传入 Icon 来查看所有可用的 icon
 
 ## 主题定制
 
 如果需要自定义主题（如 Design Token、颜色、字体等），请参考官方定制文档：
 
 文档中包含：
+
 - 主题变量配置方法
 - 暗黑模式支持
 
@@ -57,6 +58,7 @@ import { IconUser, IconHome, IconSearch } from '@douyinfe/semi-icons';
 ```
 
 文档中包含：
+
 - React 19 新特性使用示例
 - 已知兼容性问题及解决方案
 - 性能优化建议
@@ -94,7 +96,7 @@ import { IconUser, IconHome, IconSearch } from '@douyinfe/semi-icons';
 使用 class 组件继承 Semi 组件，覆盖相应方法：
 
 ```jsx
-import { Select } from '@douyinfe/semi-ui';
+import { Select } from "@douyinfe/semi-ui";
 
 class CustomSelect extends Select {
   // 覆盖渲染方法，修改 UI
@@ -108,18 +110,18 @@ class CustomSelect extends Select {
       </div>
     );
   }
-  
+
   // 覆盖选项选择处理，添加额外逻辑
   onSelect(option, optionIndex, e) {
-    console.log('自定义选择逻辑', option);
+    console.log("自定义选择逻辑", option);
     // 调用原始逻辑
     super.onSelect(option, optionIndex, e);
   }
-  
+
   // 覆盖生命周期方法
   componentDidMount() {
     super.componentDidMount();
-    console.log('Select 已挂载');
+    console.log("Select 已挂载");
   }
 }
 ```
@@ -127,16 +129,16 @@ class CustomSelect extends Select {
 ### 步骤 3：使用扩展组件
 
 ```jsx
-import { CustomSelect } from './components';
+import { CustomSelect } from "./components";
 
-<CustomSelect 
+<CustomSelect
   label="请选择"
   dataSource={[
-    { value: 'apple', label: '苹果' },
-    { value: 'banana', label: '香蕉' }
+    { value: "apple", label: "苹果" },
+    { value: "banana", label: "香蕉" },
   ]}
-  onChange={value => console.log('选择了', value)}
-/>
+  onChange={(value) => console.log("选择了", value)}
+/>;
 ```
 
 ### 覆盖内部逻辑示例
@@ -144,7 +146,7 @@ import { CustomSelect } from './components';
 修改 Table 的排序行为：
 
 ```jsx
-import { Table } from '@douyinfe/semi-ui';
+import { Table } from "@douyinfe/semi-ui";
 
 class CustomTable extends Table {
   handleSorterChange = (column, order) => {
@@ -154,7 +156,7 @@ class CustomTable extends Table {
     }
     // 调用原始逻辑
     super.handleSorterChange(column, order);
-  }
+  };
 }
 ```
 
@@ -168,6 +170,7 @@ class CustomTable extends Table {
 继承扩展是一种较重的方案，应优先尝试通过 props 实现：
 
 **优先使用 props**：
+
 ```jsx
 // 大多数需求可以通过 props 满足
 <Button type="primary" loading={loading} onClick={handleClick}>
@@ -176,14 +179,15 @@ class CustomTable extends Table {
 ```
 
 **当 props 无法满足时**，才考虑扩展：
+
 - 需要修改组件内部方法的默认行为
 - 需要劫持组件的生命周期逻辑
 - 需要在渲染流程中插入自定义逻辑，或修改组件内部 UI
 
 例如：需要修改 Table 排序的默认算法、覆盖 Modal 的某些默认配置等。
 
-
 # tailwind
+
 如果项目使用 tailwind, 请使用 MCP 工具获取相关文档：
 
 ```json
@@ -194,6 +198,3 @@ class CustomTable extends Table {
   }
 }
 ```
-
-
-

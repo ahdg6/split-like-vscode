@@ -271,13 +271,12 @@ export default function ReadonlyFileViewer(props: {
               key={sourceKey}
               ref={viewerRef}
               className="readonlyFileViewerFrame file-viewer"
-              file={localFile ?? undefined}
               filename={activeName}
               name={activeName}
               onStateChange={handleStateChange}
               options={viewerOptions}
               type={activeType}
-              url={localFile ? undefined : props.file.sourceUrl}
+              {...(localFile ? { file: localFile } : { url: props.file.sourceUrl })}
             />
           </div>
         </section>

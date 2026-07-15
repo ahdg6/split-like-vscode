@@ -8,8 +8,6 @@
   },
   "ColorfulMonorepo.data": {
     "workspaces": [],
-    "scriptFavorites": [
-      "app#dev"
-    ]
+    "scriptFavorites": ["app#dev"]
   }
 }

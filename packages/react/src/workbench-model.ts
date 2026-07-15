@@ -21,15 +21,15 @@ export interface WorkbenchValue {
 
 export interface WorkbenchValueSnapshot {
   version: 1;
-  activeByPart?: Partial<Record<WorkbenchPart, string>>;
-  activeEditorTabs?: Record<string, string>;
-  visibleParts?: Partial<Record<WorkbenchPart, boolean>>;
+  activeByPart?: Partial<Record<WorkbenchPart, string>> | undefined;
+  activeEditorTabs?: Record<string, string> | undefined;
+  visibleParts?: Partial<Record<WorkbenchPart, boolean>> | undefined;
 }
 
 export interface WorkbenchAreaSizeSnapshot {
-  workbench?: Record<string, number>;
-  center?: Record<string, number>;
-  editorGroups?: Record<string, number>;
+  workbench?: Record<string, number> | undefined;
+  center?: Record<string, number> | undefined;
+  editorGroups?: Record<string, number> | undefined;
 }
 
 export type WorkbenchAreaLayoutId = "workbench" | "center" | "editorGroups";

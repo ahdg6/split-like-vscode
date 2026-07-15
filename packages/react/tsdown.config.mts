@@ -21,7 +21,11 @@ const config: ReturnType<typeof defineConfig> = defineConfig({
     neverBundle: ["react", "react/jsx-runtime", "react-dom", "@worksplit/core"],
   },
   exports: {
-    devExports: "development",
+    customExports(exports, { isPublish }) {
+      exports["./style.css"] = isPublish ? "./dist/style.css" : "./src/style.css";
+      return exports;
+    },
+    devExports: true,
   },
 });
 

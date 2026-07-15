@@ -446,7 +446,9 @@ function App() {
         const next = current.filter((item) => createTabId(item) !== tabId);
         if (activeTabId === tabId) {
           const fallback = next[Math.max(0, index - 1)] ?? next[0];
-          setActiveTabId(createTabId(fallback));
+          if (fallback) {
+            setActiveTabId(createTabId(fallback));
+          }
         }
         return next;
       });

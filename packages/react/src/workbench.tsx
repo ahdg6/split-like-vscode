@@ -174,7 +174,7 @@ export interface WorkbenchCollapsedPartRenderInfo {
   actions: WorkbenchActions;
   icon: ReactNode;
   part: WorkbenchPart;
-  view?: WorkbenchView;
+  view?: WorkbenchView | undefined;
   split: SplitViewCollapsedRenderInfo;
   value: WorkbenchValue;
 }
@@ -941,7 +941,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(
       if (orderedEditorGroups.length === 1) {
         return (
           <div className="worksplit-workbench-editor">
-            {renderEditorGroup(orderedEditorGroups[0])}
+            {renderEditorGroup(orderedEditorGroups[0]!)}
           </div>
         );
       }

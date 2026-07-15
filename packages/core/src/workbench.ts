@@ -17,8 +17,8 @@ export interface WorkbenchValue {
 
 export interface WorkbenchValueSnapshot {
   version: 1;
-  activeByPart?: Partial<Record<WorkbenchPart, string>>;
-  visibleParts?: Partial<Record<WorkbenchPart, boolean>>;
+  activeByPart?: Partial<Record<WorkbenchPart, string>> | undefined;
+  visibleParts?: Partial<Record<WorkbenchPart, boolean>> | undefined;
 }
 
 export const WORKBENCH_PARTS: readonly WorkbenchPart[] = ["primary", "secondary", "panel"];

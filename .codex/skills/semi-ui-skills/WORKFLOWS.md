@@ -4,12 +4,12 @@
 
 ## Semi MCP 工具概览
 
-| 工具名称 | 功能 | 使用场景 |
-|---------|------|---------|
-| `get_semi_document` | 获取组件文档或组件列表 | 查找组件、了解 API |
-| `get_component_file_list` | 获取组件源码文件列表 | 了解组件结构 |
-| `get_file_code` | 获取文件代码内容 | 查看组件实现 |
-| `get_function_code` | 获取函数完整实现 | 深入了解逻辑 |
+| 工具名称                  | 功能                   | 使用场景           |
+| ------------------------- | ---------------------- | ------------------ |
+| `get_semi_document`       | 获取组件文档或组件列表 | 查找组件、了解 API |
+| `get_component_file_list` | 获取组件源码文件列表   | 了解组件结构       |
+| `get_file_code`           | 获取文件代码内容       | 查看组件实现       |
+| `get_function_code`       | 获取函数完整实现       | 深入了解逻辑       |
 
 ## 基础查询流程
 
@@ -85,11 +85,13 @@
 **步骤**：
 
 1. **查询 Table 组件文档**
+
    ```json
    { "name": "get_semi_document", "arguments": { "componentName": "Table" } }
    ```
 
 2. **获取 Table 相关文件**
+
    ```json
    { "name": "get_component_file_list", "arguments": { "componentName": "Table" } }
    ```
@@ -100,6 +102,7 @@
    - 查看 `columns.tsx` 了解列配置
 
 4. **查看 onFilter 示例**
+
    ```json
    {
      "name": "get_function_code",
@@ -131,11 +134,13 @@
 **步骤**：
 
 1. **查询 Form 组件文档**
+
    ```json
    { "name": "get_semi_document", "arguments": { "componentName": "Form" } }
    ```
 
 2. **获取 Form 相关文件**
+
    ```json
    { "name": "get_component_file_list", "arguments": { "componentName": "Form" } }
    ```
@@ -156,6 +161,7 @@
 **步骤**：
 
 1. **查询 Cascader 组件文档**
+
    ```json
    { "name": "get_semi_document", "arguments": { "componentName": "Cascader" } }
    ```
@@ -228,13 +234,16 @@
 ### 常见错误及解决
 
 **错误 1：组件未找到**
+
 - 确认组件名称拼写正确
 - 使用 `get_semi_document` 获取完整列表
 
 **错误 2：文件路径错误**
+
 - 使用 `get_component_file_list` 获取正确路径
 - 注意大小写和路径分隔符
 
 **错误 3：函数不存在**
+
 - 确认函数名称准确
 - 使用 `get_file_code` 查看文件内容确认函数名

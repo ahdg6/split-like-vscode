@@ -193,8 +193,8 @@ function EmptyTool(props: { title: string }) {
 
 function PanelHeader(props: {
   onClose(): void;
-  onReset?: () => void;
-  onTogglePanelPosition?: () => void;
+  onReset?: (() => void) | undefined;
+  onTogglePanelPosition?: (() => void) | undefined;
   icon: ReactNode;
   part: WorkbenchPart;
   view: WorkbenchView;

@@ -20,17 +20,22 @@ export type PanePriority = "low" | "normal" | "high" | number;
 
 export interface PaneConstraints {
   id: string;
-  minSize?: number;
-  maxSize?: number;
-  defaultSize?: PaneSizeValue;
-  priority?: PanePriority;
-  collapsedSize?: number;
-  visible?: boolean;
+  minSize?: number | undefined;
+  maxSize?: number | undefined;
+  defaultSize?: PaneSizeValue | undefined;
+  priority?: PanePriority | undefined;
+  collapsedSize?: number | undefined;
+  visible?: boolean | undefined;
 }
 
-export interface ResolvedPane extends Required<Omit<PaneConstraints, "defaultSize" | "priority">> {
-  defaultSize?: PaneSizeValue;
+export interface ResolvedPane {
+  id: string;
+  minSize: number;
+  maxSize: number;
+  collapsedSize: number;
+  defaultSize?: PaneSizeValue | undefined;
   priority: number;
+  visible: boolean;
 }
 
 export interface PaneLayoutItem extends ResolvedPane {
@@ -59,8 +64,8 @@ export interface SplitLayout {
 export interface CreateSplitLayoutOptions {
   panes: PaneConstraints[];
   containerSize: number;
-  sizes?: number[];
-  sizeById?: Record<string, number | undefined>;
+  sizes?: number[] | undefined;
+  sizeById?: Record<string, number | undefined> | undefined;
 }
 
 const DEFAULT_MIN_SIZE = 48;
@@ -94,7 +99,7 @@ export function createSplitLayout(options: CreateSplitLayoutOptions): SplitLayou
       : options.sizeById
         ? reconcileSizes(
             resolveInitialSizes(visiblePanes, containerSize).map(
-              (size, index) => options.sizeById?.[visiblePanes[index].id] ?? size,
+              (size, index) => options.sizeById?.[visiblePanes[index]!.id] ?? size,
             ),
             visiblePanes,
             containerSize,
@@ -163,8 +168,9 @@ export function setPaneSize(layout: SplitLayout, paneId: string, size: number): 
     return layout;
   }
 
-  const current = layout.sizes[index];
-  const next = clamp(size, layout.items[index].minSize, layout.items[index].maxSize);
+  const current = layout.sizes[index]!;
+  const item = layout.items[index]!;
+  const next = clamp(size, item.minSize, item.maxSize);
   const delta = next - current;
   if (Math.abs(delta) < EPSILON) {
     return layout;
@@ -236,7 +242,7 @@ function resolveInitialSizes(panes: ResolvedPane[], containerSize: number): numb
     const parsed = parsePaneSize(pane.defaultSize, containerSize);
     if (parsed !== undefined) {
       sizes[index] = clamp(parsed, pane.minSize, pane.maxSize);
-      fixedTotal += sizes[index];
+      fixedTotal += sizes[index]!;
       return;
     }
 
@@ -245,7 +251,7 @@ function resolveInitialSizes(panes: ResolvedPane[], containerSize: number): numb
 
   const remaining = Math.max(0, containerSize - fixedTotal);
   panes.forEach((pane, index) => {
-    if (sizes[index] > 0) {
+    if (sizes[index]! > 0) {
       return;
     }
     const fraction = readFraction(pane.defaultSize);
@@ -261,7 +267,7 @@ function reconcileSizes(
   target: number,
 ): number[] {
   const sizes = input.map((size, index) =>
-    clamp(finiteNumber(size, panes[index].minSize), panes[index].minSize, panes[index].maxSize),
+    clamp(finiteNumber(size, panes[index]!.minSize), panes[index]!.minSize, panes[index]!.maxSize),
   );
   let delta = target - sizes.reduce(sum, 0);
 
@@ -300,7 +306,7 @@ function buildLayout(
       };
     }
 
-    const size = roundSize(sizes[visibleIndex]);
+    const size = roundSize(sizes[visibleIndex]!);
     visibleIndex += 1;
     const item = { ...pane, size, offset: roundSize(offset), visible: true };
     offset += size;
@@ -355,7 +361,7 @@ function growthCapacity(
   indexes: readonly number[],
 ): number {
   return indexes.reduce(
-    (total, index) => total + Math.max(0, items[index].maxSize - sizes[index]),
+    (total, index) => total + Math.max(0, items[index]!.maxSize - sizes[index]!),
     0,
   );
 }
@@ -366,7 +372,7 @@ function shrinkCapacity(
   indexes: readonly number[],
 ): number {
   return indexes.reduce(
-    (total, index) => total + Math.max(0, sizes[index] - items[index].minSize),
+    (total, index) => total + Math.max(0, sizes[index]! - items[index]!.minSize),
     0,
   );
 }
@@ -382,9 +388,9 @@ function grow(
     if (remaining <= EPSILON) {
       break;
     }
-    const available = Math.max(0, items[index].maxSize - sizes[index]);
+    const available = Math.max(0, items[index]!.maxSize - sizes[index]!);
     const applied = Math.min(available, remaining);
-    sizes[index] += applied;
+    sizes[index] = sizes[index]! + applied;
     remaining -= applied;
   }
   return amount - remaining;
@@ -401,9 +407,9 @@ function shrink(
     if (remaining <= EPSILON) {
       break;
     }
-    const available = Math.max(0, sizes[index] - items[index].minSize);
+    const available = Math.max(0, sizes[index]! - items[index]!.minSize);
     const applied = Math.min(available, remaining);
-    sizes[index] -= applied;
+    sizes[index] = sizes[index]! - applied;
     remaining -= applied;
   }
   return amount - remaining;
