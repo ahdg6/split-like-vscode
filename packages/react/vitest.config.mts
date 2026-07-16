@@ -1,21 +1,16 @@
-import { readdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
 
 import { defineConfig } from "vitest/config";
 
-const packageRoot = dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = resolve(packageRoot, "../..");
+const require = createRequire(import.meta.url);
 
-function resolvePnpmPackage(packageName: string) {
-  const storeRoot = join(workspaceRoot, "node_modules/.pnpm");
-  const entry = readdirSync(storeRoot).find((name) => name.startsWith(`${packageName}@`));
-  if (!entry) throw new Error(`Unable to resolve ${packageName} in ${storeRoot}`);
-  return join(storeRoot, entry, "node_modules", packageName);
+function resolvePackageRoot(packageName: string) {
+  return dirname(require.resolve(packageName));
 }
 
-const reactRoot = resolvePnpmPackage("react");
-const reactDomRoot = resolvePnpmPackage("react-dom");
+const reactRoot = resolvePackageRoot("react");
+const reactDomRoot = resolvePackageRoot("react-dom");
 
 const config: ReturnType<typeof defineConfig> = defineConfig({
   root: new URL(".", import.meta.url).pathname,
