@@ -1075,6 +1075,12 @@ function useResizeObserver(
   ref: React.RefObject<HTMLElement | null>,
   onResize: (entry: ResizeObserverEntry) => void,
 ): void {
+  const onResizeRef = useRef(onResize);
+
+  useIsomorphicLayoutEffect(() => {
+    onResizeRef.current = onResize;
+  }, [onResize]);
+
   useIsomorphicLayoutEffect(() => {
     const node = ref.current;
     if (!node || typeof ResizeObserver === "undefined") {
@@ -1084,12 +1090,12 @@ function useResizeObserver(
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        onResize(entry);
+        onResizeRef.current(entry);
       }
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [onResize, ref]);
+  }, [ref]);
 }
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;

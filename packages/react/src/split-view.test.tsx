@@ -5,7 +5,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Pane, SplitView, type SplitViewHandle } from "./split-view";
 import { installTestResizeObserver } from "./test-resize-observer";
 
-installTestResizeObserver({ height: 400, width: 800 });
+const resizeObserverHarness = installTestResizeObserver({ height: 400, width: 800 });
+
+function ResizeObserverFixture(props: { readonly version: number }) {
+  return (
+    <div style={{ height: 400, width: 800 }}>
+      <SplitView>
+        <Pane id="left" defaultSize={300} minSize={100}>
+          Left {props.version}
+        </Pane>
+        <Pane id="right" defaultSize="1fr" minSize={100}>
+          Right {props.version}
+        </Pane>
+      </SplitView>
+    </div>
+  );
+}
 
 afterEach(() => {
   cleanup();
@@ -88,6 +103,23 @@ describe("@worksplit/react", () => {
 
     expect(screen.getByText("Left 2")).toBeTruthy();
     expect(handle.current?.getLayout()).toBe(initialLayout);
+  });
+
+  it("keeps one resize observer subscription when pane content rerenders", async () => {
+    resizeObserverHarness.instances.length = 0;
+
+    const { rerender } = render(<ResizeObserverFixture version={1} />);
+
+    await waitFor(() => expect(screen.getByText("Right 1")).toBeTruthy());
+    expect(resizeObserverHarness.instances).toHaveLength(1);
+
+    const observer = resizeObserverHarness.instances[0]!;
+    rerender(<ResizeObserverFixture version={2} />);
+
+    expect(screen.getByText("Right 2")).toBeTruthy();
+    expect(resizeObserverHarness.instances).toHaveLength(1);
+    expect(observer.disconnect).not.toHaveBeenCalled();
+    expect(observer.observe).toHaveBeenCalledTimes(1);
   });
 
   it("resizes panes from the keyboard", () => {

@@ -727,11 +727,14 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(
       },
       [commandRegistry, runCommand],
     );
+    const handleDocumentKeyDownRef = useRef(handleDocumentKeyDown);
+    handleDocumentKeyDownRef.current = handleDocumentKeyDown;
 
     useEffect(() => {
-      document.addEventListener("keydown", handleDocumentKeyDown);
-      return () => document.removeEventListener("keydown", handleDocumentKeyDown);
-    }, [handleDocumentKeyDown]);
+      const handleKeyDown = (event: KeyboardEvent) => handleDocumentKeyDownRef.current(event);
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }, []);
 
     const renderPartPane = (part: CoreWorkbenchPart) => {
       const view = getActiveWorkbenchView(orderedViews, currentValue, part) as

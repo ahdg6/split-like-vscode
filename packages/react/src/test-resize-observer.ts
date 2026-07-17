@@ -1,11 +1,27 @@
 import { vi } from "vitest";
 
-export function installTestResizeObserver(size: { height: number; width: number }): void {
+export interface TestResizeObserverInstance {
+  readonly disconnect: ReturnType<typeof vi.fn<() => void>>;
+  readonly observe: ReturnType<typeof vi.fn<(target: Element) => void>>;
+  readonly unobserve: ReturnType<typeof vi.fn<(target: Element) => void>>;
+}
+
+export interface TestResizeObserverHarness {
+  readonly instances: TestResizeObserverInstance[];
+}
+
+export function installTestResizeObserver(size: {
+  height: number;
+  width: number;
+}): TestResizeObserverHarness {
+  const instances: TestResizeObserverInstance[] = [];
+
   class TestResizeObserver implements ResizeObserver {
     private callback: ResizeObserverCallback;
 
     constructor(callback: ResizeObserverCallback) {
       this.callback = callback;
+      instances.push(this);
     }
 
     observe = vi.fn<(target: Element) => void>((target) => {
@@ -49,4 +65,5 @@ export function installTestResizeObserver(size: { height: number; width: number 
   }
 
   globalThis.ResizeObserver = TestResizeObserver;
+  return { instances };
 }

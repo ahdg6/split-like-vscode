@@ -15,6 +15,7 @@ installTestResizeObserver({ height: 600, width: 900 });
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 const views: WorkbenchView[] = [
@@ -74,6 +75,15 @@ const editorGroups: WorkbenchEditorGroup[] = [
     ],
   },
 ];
+
+function RerenderingWorkbench(props: { readonly version: number }) {
+  return (
+    <Workbench
+      editor={<div>Editor {props.version}</div>}
+      views={views.map((view) => ({ ...view }))}
+    />
+  );
+}
 
 describe("Workbench", () => {
   it("supports editor-only usage without an empty activity bar", () => {
@@ -149,6 +159,23 @@ describe("Workbench", () => {
     });
 
     expect(handle.current?.getValue().visibleParts.panel).toBe(false);
+  });
+
+  it("keeps one document keydown subscription when workbench content rerenders", () => {
+    const addEventListener = vi.spyOn(document, "addEventListener");
+    const removeEventListener = vi.spyOn(document, "removeEventListener");
+    const { rerender } = render(<RerenderingWorkbench version={1} />);
+    const keydownSubscriptions = () =>
+      addEventListener.mock.calls.filter(([event]) => event === "keydown").length;
+    const keydownUnsubscriptions = () =>
+      removeEventListener.mock.calls.filter(([event]) => event === "keydown").length;
+
+    expect(keydownSubscriptions()).toBe(1);
+    rerender(<RerenderingWorkbench version={2} />);
+
+    expect(screen.getByText("Editor 2")).toBeTruthy();
+    expect(keydownSubscriptions()).toBe(1);
+    expect(keydownUnsubscriptions()).toBe(0);
   });
 
   it("does not dispatch command keybindings from editable targets", () => {
