@@ -47,7 +47,6 @@ const views: WorkbenchView[] = [
         ))}
       </div>
     ),
-    size: { default: 260, max: 420, min: 180 },
     title: "Explorer",
   },
   {
@@ -77,7 +76,6 @@ const views: WorkbenchView[] = [
         pnpm dev:demo{"\n"}Local: http://localhost:5174/{"\n"}packages built in library mode
       </pre>
     ),
-    size: { default: 220, max: 360, min: 140 },
     title: "Terminal",
   },
   {
@@ -98,7 +96,6 @@ const views: WorkbenchView[] = [
         </section>
       </div>
     ),
-    size: { default: 320, max: 460, min: 240 },
     title: "Inspector",
   },
   {
@@ -152,6 +149,11 @@ function App() {
     <Workbench
       className="shell"
       editorGroups={editorGroups}
+      partSizes={{
+        panel: { default: 220, max: 360, min: 140 },
+        primary: { default: 260, max: 420, min: 180 },
+        secondary: { default: 320, max: 460, min: 240 },
+      }}
       renderCollapsedPart={({ icon }) => (
         <span className="collapsedMarker" aria-hidden="true">
           {icon}
@@ -167,7 +169,7 @@ function App() {
           view={view}
         />
       )}
-      layoutStorageKey="worksplit-demo-layout"
+      storageKey="worksplit-demo-layout"
       views={views}
     />
   );
@@ -258,7 +260,6 @@ const sampleCode = `const views: WorkbenchView[] = [
     part: "primary",
     title: "Explorer",
     icon: Files,
-    size: { default: 260, min: 180, max: 420 },
     renderContent: () => <Explorer />,
   },
   {
@@ -266,7 +267,6 @@ const sampleCode = `const views: WorkbenchView[] = [
     part: "panel",
     title: "Terminal",
     icon: Play,
-    size: { default: 220, min: 140, max: 360 },
     renderContent: () => <Terminal />,
   },
 ];
@@ -286,7 +286,12 @@ const editorGroups: WorkbenchEditorGroup[] = [
   },
 ];
 
-<Workbench editorGroups={editorGroups} views={views} layoutStorageKey="workspace-layout" />;`;
+<Workbench
+  editorGroups={editorGroups}
+  partSizes={{ panel: { default: 220 }, primary: { default: 260 } }}
+  storageKey="workspace-layout"
+  views={views}
+/>;`;
 
 const splitViewCode = `const editorGroups: WorkbenchEditorGroup[] = [
   {
@@ -303,7 +308,7 @@ const splitViewCode = `const editorGroups: WorkbenchEditorGroup[] = [
   },
 ];
 
-<Workbench editorGroups={editorGroups} views={views} layoutStorageKey="workspace-layout" />;`;
+<Workbench editorGroups={editorGroups} storageKey="workspace-layout" views={views} />;`;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

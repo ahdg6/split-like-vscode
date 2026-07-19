@@ -25,7 +25,6 @@ const views: WorkbenchView[] = [
     id: "explorer",
     part: "primary",
     renderContent: () => <div>Explorer View</div>,
-    size: { default: 240, min: 120 },
     title: "Explorer",
   },
   {
@@ -34,7 +33,6 @@ const views: WorkbenchView[] = [
     id: "terminal",
     part: "panel",
     renderContent: () => <div>Terminal View</div>,
-    size: { default: 180, min: 100 },
     title: "Terminal",
   },
   {
@@ -43,7 +41,6 @@ const views: WorkbenchView[] = [
     id: "inspector",
     part: "secondary",
     renderContent: () => <div>Inspector View</div>,
-    size: { default: 260, min: 160 },
     title: "Inspector",
   },
 ];
@@ -87,10 +84,37 @@ function RerenderingWorkbench(props: { readonly version: number }) {
 
 describe("Workbench", () => {
   it("supports editor-only usage without an empty activity bar", () => {
-    render(<Workbench>Editor</Workbench>);
+    render(<Workbench editor="Editor" />);
 
     expect(screen.getByText("Editor")).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Workbench views" })).toBeNull();
+  });
+
+  it("rejects ambiguous view and editor tab ids", () => {
+    expect(() =>
+      render(
+        <Workbench
+          editor={<div>Editor</div>}
+          views={[views[0]!, { ...views[0]!, title: "Duplicate" }]}
+        />,
+      ),
+    ).toThrow('Duplicate workbench view id "explorer"');
+
+    expect(() =>
+      render(
+        <Workbench
+          editorGroups={[
+            {
+              id: "main",
+              tabs: [
+                { id: "same", renderContent: () => "One" },
+                { id: "same", renderContent: () => "Two" },
+              ],
+            },
+          ]}
+        />,
+      ),
+    ).toThrow('Duplicate tab id "same" in editor group "main"');
   });
 
   it("toggles active views from the activity bar", () => {
@@ -126,8 +150,11 @@ describe("Workbench", () => {
     render(
       <Workbench
         ref={handle}
-        defaultPanelPosition="right"
-        defaultValue={{ version: 1, visibleParts: { primary: false } }}
+        defaultLayout={{
+          panelPosition: "right",
+          value: { version: 1, visibleParts: { primary: false } },
+          version: 1,
+        }}
         editor={<div>Editor</div>}
         views={views}
       />,
@@ -277,6 +304,86 @@ describe("Workbench", () => {
     );
   });
 
+  it("composes consecutive actions from the latest pending state", () => {
+    const handle = createRef<WorkbenchHandle>();
+
+    render(<Workbench ref={handle} editor={<div>Editor</div>} views={views} />);
+
+    act(() => {
+      handle.current?.hidePart("primary");
+      handle.current?.hidePart("secondary");
+    });
+
+    expect(handle.current?.getValue().visibleParts).toEqual({
+      panel: true,
+      primary: false,
+      secondary: false,
+    });
+  });
+
+  it("composes controlled action proposals without mutating the accepted value", () => {
+    const handle = createRef<WorkbenchHandle>();
+    const onValueChange = vi.fn<NonNullable<ComponentProps<typeof Workbench>["onValueChange"]>>();
+    const value = {
+      activeByPart: {
+        panel: "terminal",
+        primary: "explorer",
+        secondary: "inspector",
+      },
+      activeEditorTabs: { main: "editor" },
+      version: 1 as const,
+      visibleParts: { panel: true, primary: true, secondary: true },
+    };
+
+    render(
+      <Workbench
+        ref={handle}
+        editor={<div>Editor</div>}
+        onValueChange={onValueChange}
+        value={value}
+        views={views}
+      />,
+    );
+
+    act(() => {
+      handle.current?.hidePart("primary");
+      handle.current?.hidePart("secondary");
+    });
+
+    expect(onValueChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        visibleParts: { panel: true, primary: false, secondary: false },
+      }),
+    );
+    expect(handle.current?.getValue()).toEqual(value);
+  });
+
+  it("keeps render-slot actions stable when inline descriptors rerender", () => {
+    const observedActions: unknown[] = [];
+
+    function Fixture(props: { readonly version: number }) {
+      return (
+        <Workbench
+          editor={<div>Editor {props.version}</div>}
+          renderPartHeader={({ actions, view }) => {
+            observedActions.push(actions);
+            return <span>{view.title}</span>;
+          }}
+          views={views.map((view) => ({ ...view }))}
+        />
+      );
+    }
+
+    const { rerender } = render(<Fixture version={1} />);
+    const firstActions = observedActions.at(-1);
+    observedActions.length = 0;
+
+    rerender(<Fixture version={2} />);
+
+    expect(observedActions).not.toHaveLength(0);
+    expect(observedActions.every((actions) => actions === firstActions)).toBe(true);
+  });
+
   it("renders editor groups and tracks active editor tabs", () => {
     const handle = createRef<WorkbenchHandle>();
 
@@ -297,6 +404,13 @@ describe("Workbench", () => {
       right: "preview",
     });
     expect(handle.current?.getAreaLayout("editorGroups")).toBeTruthy();
+
+    const appTab = screen.getByRole("tab", { name: "App.tsx" });
+    appTab.focus();
+    fireEvent.keyDown(appTab, { key: "ArrowRight" });
+
+    expect(screen.getByRole("tab", { name: "Workbench.tsx" }).tabIndex).toBe(0);
+    expect(screen.getByRole("tabpanel", { name: "Workbench.tsx" })).toBeTruthy();
   });
 
   it("restores layout snapshots with split sizes", () => {
@@ -338,17 +452,14 @@ describe("Workbench", () => {
     expect(snapshot?.areaSizes?.workbench?.["workbench:primary"]).toBe(180);
   });
 
-  it("does not emit value or panel changes when restoring equivalent state", () => {
+  it("does not emit value changes when restoring equivalent state", () => {
     const handle = createRef<WorkbenchHandle>();
-    const onPanelPositionChange =
-      vi.fn<NonNullable<ComponentProps<typeof Workbench>["onPanelPositionChange"]>>();
     const onValueChange = vi.fn<NonNullable<ComponentProps<typeof Workbench>["onValueChange"]>>();
 
     render(
       <Workbench
         ref={handle}
         editor={<div>Editor</div>}
-        onPanelPositionChange={onPanelPositionChange}
         onValueChange={onValueChange}
         views={views}
       />,
@@ -358,7 +469,6 @@ describe("Workbench", () => {
       handle.current?.restoreLayout(handle.current.getLayout());
     });
 
-    expect(onPanelPositionChange).not.toHaveBeenCalled();
     expect(onValueChange).not.toHaveBeenCalled();
   });
 });

@@ -42,25 +42,22 @@ export interface WorkbenchLayout {
 }
 
 export function readStartupLayout(
-  layoutStorageKey: string | undefined,
+  storageKey: string | undefined,
   defaultLayout: WorkbenchLayout | undefined,
-  defaultValue: WorkbenchValueSnapshot | undefined,
-  defaultPanelPosition: WorkbenchPanelPosition,
 ): WorkbenchLayout {
-  const fallback = normalizeLayout(defaultLayout, defaultValue, defaultPanelPosition);
-  if (!layoutStorageKey || typeof window === "undefined") {
-    return fallback;
-  }
-
-  const stored = window.localStorage.getItem(layoutStorageKey);
-  if (!stored) {
+  const fallback = normalizeLayout(defaultLayout, undefined, "bottom");
+  if (!storageKey || typeof window === "undefined") {
     return fallback;
   }
 
   try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) {
+      return fallback;
+    }
     const parsed = JSON.parse(stored) as Partial<WorkbenchLayout>;
     if (parsed.version === 1 && parsed.value) {
-      return normalizeLayout(parsed, defaultValue, defaultPanelPosition);
+      return normalizeLayout(parsed, undefined, "bottom");
     }
   } catch {
     return fallback;
@@ -72,12 +69,12 @@ export function readStartupLayout(
 export function normalizeLayout(
   layout: Partial<WorkbenchLayout> | undefined,
   defaultValue: WorkbenchValueSnapshot | undefined,
-  defaultPanelPosition: WorkbenchPanelPosition,
+  fallbackPanelPosition: WorkbenchPanelPosition,
 ): WorkbenchLayout {
   return {
     panelPosition: isPanelPosition(layout?.panelPosition)
       ? layout.panelPosition
-      : defaultPanelPosition,
+      : fallbackPanelPosition,
     areaSizes: normalizeAreaSizeSnapshot(layout?.areaSizes),
     version: 1,
     value: normalizeValueSnapshot(layout?.value ?? defaultValue),
@@ -132,10 +129,16 @@ export function normalizeValueSnapshot(
   }
 
   return {
-    activeByPart: readPartSnapshot(value.activeByPart),
+    activeByPart: readPartSnapshot(
+      value.activeByPart,
+      (item): item is string => typeof item === "string",
+    ),
     activeEditorTabs: sanitizeActiveEditorTabs(value.activeEditorTabs),
     version: 1,
-    visibleParts: readPartSnapshot(value.visibleParts),
+    visibleParts: readPartSnapshot(
+      value.visibleParts,
+      (item): item is boolean => typeof item === "boolean",
+    ),
   };
 }
 
@@ -196,15 +199,16 @@ function sanitizeActiveEditorTabs(
 
 function readPartSnapshot<T>(
   value: Partial<Record<WorkbenchPart, T>> | undefined,
+  accepts: (value: unknown) => value is T,
 ): Partial<Record<WorkbenchPart, T>> | undefined {
-  if (!value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     return undefined;
   }
 
   const next: Partial<Record<WorkbenchPart, T>> = {};
   for (const part of WORKBENCH_PARTS) {
     const item = value[part];
-    if (item !== undefined) {
+    if (accepts(item)) {
       next[part] = item;
     }
   }
@@ -219,10 +223,23 @@ function normalizeAreaSizeSnapshot(
   }
 
   return {
-    center: snapshot.center ? { ...snapshot.center } : undefined,
-    editorGroups: snapshot.editorGroups ? { ...snapshot.editorGroups } : undefined,
-    workbench: snapshot.workbench ? { ...snapshot.workbench } : undefined,
+    center: sanitizeSizeRecord(snapshot.center),
+    editorGroups: sanitizeSizeRecord(snapshot.editorGroups),
+    workbench: sanitizeSizeRecord(snapshot.workbench),
   };
+}
+
+function sanitizeSizeRecord(
+  value: Record<string, number> | undefined,
+): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, number] =>
+      typeof entry[1] === "number" && Number.isFinite(entry[1]) && entry[1] >= 0,
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function isPanelPosition(value: unknown): value is WorkbenchPanelPosition {

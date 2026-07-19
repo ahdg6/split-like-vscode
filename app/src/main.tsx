@@ -662,15 +662,17 @@ function App() {
       <Workbench
         ref={workbenchRef}
         className="piShell"
-        defaultPanelPosition="bottom"
-        defaultValue={{
-          activeByPart: { panel: "tools", primary: "workspace", secondary: "tools" },
-          activeEditorTabs: { main: activeTabId },
+        defaultLayout={{
+          panelPosition: "bottom",
+          value: {
+            activeByPart: { panel: "tools", primary: "workspace", secondary: "tools" },
+            activeEditorTabs: { main: activeTabId },
+            version: 1,
+            visibleParts: { panel: false, primary: true, secondary: false },
+          },
           version: 1,
-          visibleParts: { panel: false, primary: true, secondary: false },
         }}
         editorGroups={editorGroups}
-        layoutStorageKey="pi-web-md-workspace-layout-v4"
         onValueChange={(value) => {
           const next = value.activeEditorTabs.main;
           if (next) {
@@ -692,6 +694,7 @@ function App() {
           secondary: { default: 340, max: 480, min: 280 },
         }}
         renderActivityItem={renderActivityItem}
+        storageKey="pi-web-md-workspace-layout-v4"
         renderEditorTabLabel={({ active, icon, tab }) => (
           <span className="editorTabLabel">
             {icon}

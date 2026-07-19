@@ -57,7 +57,7 @@ import { WorkbenchSplitView } from "../../../workbench/split";
 adapter 内部负责：
 
 1. 把 Pluxel 的百分比 layout 转成 worksplit 的 pixel sizes。
-2. 把 worksplit 的 resize event 转回百分比 layout。
+2. 把 worksplit 的 committed resize event 转回百分比 layout；实时 change 不写持久化状态。
 3. 统一 pane visibility、snap、min/default size。
 4. 引入 `@worksplit/react/style.css`。
 5. 隔离未来替换 split library 的影响面。
@@ -77,7 +77,7 @@ percent layout -> pixel sizes
         ↓
 user drags sash / toggles pane
         ↓
-@worksplit/react emits layout/visibility event
+@worksplit/react emits onLayout events with phase/reason or visibility events
         ↓
 adapter converts pixel sizes -> percent layout
         ↓

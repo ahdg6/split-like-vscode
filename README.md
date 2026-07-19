@@ -68,6 +68,10 @@ export function Workspace() {
 }
 ```
 
+`onLayout` is the single layout lifecycle event. Its `phase` is `start`, `change`, or `commit`, and
+its `reason` identifies pointer, keyboard, visibility, reset, or imperative work. Persistence
+should only consume `commit` events so pointer movement never performs synchronous storage writes.
+
 ### Workbench
 
 ```tsx
@@ -79,14 +83,12 @@ const views: WorkbenchView[] = [
     id: "explorer",
     part: "primary",
     title: "Explorer",
-    size: { default: 260, min: 180, max: 420 },
     renderContent: () => <Explorer />,
   },
   {
     id: "terminal",
     part: "panel",
     title: "Terminal",
-    size: { default: 220, min: 140, max: 360 },
     renderContent: () => <Terminal />,
   },
 ];
@@ -110,20 +112,29 @@ export function Workspace() {
   return (
     <Workbench
       editorGroups={editorGroups}
-      layoutStorageKey="workspace-layout"
+      partSizes={{
+        panel: { default: 220, min: 140, max: 360 },
+        primary: { default: 260, min: 180, max: 420 },
+      }}
       renderPartHeader={({ actions, part, view }) => (
         <Header title={view.title} onClose={() => actions.hidePart(part)} />
       )}
+      storageKey="workspace-layout"
       views={views}
     />
   );
 }
 ```
 
-Workbench state is controlled with `value` / `onValueChange`; uncontrolled defaults use
-`defaultValue` and `defaultLayout`. Layout changes emit a versioned `WorkbenchLayout` through
-`onLayoutChange`, with area sizes stored by pane id. The center editor area can be `children`, an
-`editor` node, or descriptor-based `editorGroups` with tabs; pass one of them. Runtime
+Workbench state is controlled with `value` / `onValueChange`; uncontrolled initialization uses one
+versioned `defaultLayout`. Layout changes emit through `onLayout`, with area sizes stored by pane
+id. The center area is either an `editor` node or descriptor-based `editorGroups` with tabs.
+Runtime
 `WorkbenchValue` is complete, while `WorkbenchValueSnapshot` stays partial for persistence and
 initialization. Render slots receive a stable `actions` object, so common UI does not need an
 imperative ref.
+
+Workbench actions compose against the latest pending state, so multiple actions issued in one
+event are applied atomically. Action objects remain stable when consumers recreate equivalent
+`views` or `editorGroups` descriptors during render. Duplicate ids, conflicting defaults, and
+invalid size constraints fail fast with contextual errors.

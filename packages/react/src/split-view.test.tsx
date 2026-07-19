@@ -123,11 +123,11 @@ describe("@worksplit/react", () => {
   });
 
   it("resizes panes from the keyboard", () => {
-    const onLayoutChange = vi.fn<NonNullable<ComponentProps<typeof SplitView>["onLayoutChange"]>>();
+    const onLayout = vi.fn<NonNullable<ComponentProps<typeof SplitView>["onLayout"]>>();
 
     render(
       <div style={{ height: 400, width: 800 }}>
-        <SplitView onLayoutChange={onLayoutChange}>
+        <SplitView onLayout={onLayout}>
           <Pane id="left" defaultSize={400} minSize={100}>
             Left
           </Pane>
@@ -140,13 +140,61 @@ describe("@worksplit/react", () => {
 
     fireEvent.keyDown(screen.getByRole("separator"), { key: "ArrowRight" });
 
-    expect(onLayoutChange).toHaveBeenLastCalledWith(
+    expect(onLayout).toHaveBeenLastCalledWith(
       expect.objectContaining({
         layout: expect.objectContaining({ sizes: [410, 390] }),
+        phase: "commit",
+        reason: "keyboard",
         sizeById: { left: 410, right: 390 },
         sizes: [410, 390],
       }),
     );
+    expect(onLayout.mock.calls.map(([event]) => event.phase)).toEqual([
+      "start",
+      "change",
+      "commit",
+    ]);
+  });
+
+  it("emits live pointer changes but commits only when the drag ends", () => {
+    const onLayout = vi.fn<NonNullable<ComponentProps<typeof SplitView>["onLayout"]>>();
+
+    render(
+      <SplitView onLayout={onLayout}>
+        <Pane id="left" defaultSize={400} minSize={100}>
+          Left
+        </Pane>
+        <Pane id="right" defaultSize={400} minSize={100}>
+          Right
+        </Pane>
+      </SplitView>,
+    );
+
+    const sash = screen.getByRole("separator", { name: "Resize pane" });
+    fireEvent.pointerDown(sash, { clientX: 400, pointerId: 1 });
+    fireEvent(window, new MouseEvent("pointermove", { clientX: 440 }));
+
+    expect(onLayout).toHaveBeenLastCalledWith(
+      expect.objectContaining({ phase: "change", reason: "pointer", sizes: [440, 360] }),
+    );
+    expect(onLayout).not.toHaveBeenCalledWith(expect.objectContaining({ phase: "commit" }));
+
+    fireEvent(window, new MouseEvent("pointerup", { clientX: 440 }));
+
+    expect(onLayout).toHaveBeenLastCalledWith(
+      expect.objectContaining({ phase: "commit", reason: "pointer", sizes: [440, 360] }),
+    );
+  });
+
+  it("rejects duplicate pane ids before creating an ambiguous layout", () => {
+    expect(() =>
+      render(
+        <SplitView>
+          <Pane id="duplicate">One</Pane>
+          <Pane id="duplicate">Two</Pane>
+        </SplitView>,
+      ),
+    ).toThrow('Duplicate pane id "duplicate"');
   });
 
   it("collapses and restores panes through the workspace handle", () => {

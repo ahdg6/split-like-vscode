@@ -63,11 +63,17 @@ export interface SplitViewHandle {
   getLayout(): SplitLayout | null;
 }
 
-export interface SplitViewLayoutChange {
+export interface SplitViewLayoutEvent {
   layout: SplitLayout;
   sizes: number[];
   sizeById: Record<string, number>;
+  reason: SplitViewLayoutReason;
+  phase: SplitViewLayoutPhase;
 }
+
+export type SplitViewLayoutPhase = "start" | "change" | "commit";
+
+export type SplitViewLayoutReason = "pointer" | "keyboard" | "visibility" | "reset" | "imperative";
 
 export interface SplitViewPaneVisibilityChange {
   id: string;
@@ -105,10 +111,8 @@ export interface SplitViewProps extends Omit<
   sashSize?: number;
   disabled?: boolean;
   proportionalResize?: boolean;
-  onLayoutChange?: (event: SplitViewLayoutChange) => void;
+  onLayout?: (event: SplitViewLayoutEvent) => void;
   onPaneVisibilityChange?: (event: SplitViewPaneVisibilityChange) => void;
-  onResizeStart?: (event: SplitViewLayoutChange) => void;
-  onResizeEnd?: (event: SplitViewLayoutChange) => void;
   renderSash?: (info: SplitViewSashRenderInfo) => ReactNode;
   renderCollapsedPane?: (info: SplitViewCollapsedRenderInfo) => ReactNode;
 }
@@ -148,10 +152,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
       className,
       defaultSizeById,
       disabled = false,
-      onLayoutChange,
+      onLayout,
       onPaneVisibilityChange,
-      onResizeEnd,
-      onResizeStart,
       orientation = "horizontal",
       proportionalResize = true,
       renderCollapsedPane,
@@ -178,7 +180,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     const [layout, setLayout] = useState<SplitLayout | null>(null);
     const [visibility, setVisibility] = useState<Record<string, boolean>>({});
 
-    const paneElements = useMemo(() => collectPanes(children), [children]);
+    const paneElements = useMemo(() => validatePanes(collectPanes(children)), [children]);
     const paneModelSignature = useMemo(
       () => createPaneModelSignature(paneElements),
       [paneElements],
@@ -201,16 +203,20 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     }, [paneModelElements, visibility]);
 
     const publishLayout = useCallback(
-      (next: SplitLayout) => {
+      (
+        next: SplitLayout,
+        reason: SplitViewLayoutReason,
+        phase: SplitViewLayoutPhase = "change",
+      ) => {
         if (sameSplitLayout(layoutRef.current, next)) {
           return;
         }
         layoutRef.current = next;
         sizeSnapshotRef.current = mergeVisibleSizes(sizeSnapshotRef.current, next);
         setLayout(next);
-        onLayoutChange?.(createLayoutChange(next));
+        onLayout?.(createLayoutEvent(next, reason, phase));
       },
-      [onLayoutChange],
+      [onLayout],
     );
 
     const reset = useCallback(() => {
@@ -223,6 +229,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           containerSize,
           sizeById: defaultSizeByIdRef.current,
         }),
+        "reset",
+        "commit",
       );
     }, [containerSize, paneModels, publishLayout]);
 
@@ -247,7 +255,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     );
 
     const revealPane = useCallback(
-      (id: string, size?: number) => {
+      (id: string, size?: number, reason: SplitViewLayoutReason = "visibility", commit = true) => {
         const pane = paneModels.find((model) => model.id === id);
         const paneElement = paneElements.find((element) => element.props.id === id);
         if (!pane) {
@@ -278,6 +286,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
             typeof restoredSize === "number" && Number.isFinite(restoredSize)
               ? setPaneSize(revealedLayout, id, restoredSize)
               : revealedLayout,
+            reason,
+            commit ? "commit" : "change",
           );
         }
         setPaneVisibility(id, true);
@@ -286,7 +296,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     );
 
     const collapsePane = useCallback(
-      (id: string, size?: number) => {
+      (id: string, size?: number, reason: SplitViewLayoutReason = "visibility", commit = true) => {
         const paneElement = paneElements.find((element) => element.props.id === id);
         if (!paneElement) {
           return;
@@ -310,6 +320,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
               ),
               sizeById: sizeSnapshotRef.current,
             }),
+            reason,
+            commit ? "commit" : "change",
           );
         }
         setPaneVisibility(id, false);
@@ -341,6 +353,8 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           sizeSnapshotRef.current = nextSizeById;
           publishLayout(
             createSplitLayout({ panes: paneModels, containerSize, sizeById: nextSizeById }),
+            "imperative",
+            "commit",
           );
         },
         resizePane(id, size) {
@@ -348,7 +362,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           if (!current) {
             return;
           }
-          publishLayout(setPaneSize(current, id, size));
+          publishLayout(setPaneSize(current, id, size), "imperative", "commit");
         },
         togglePane(id) {
           const isVisible = paneModels.some((pane) => pane.id === id && pane.visible);
@@ -407,14 +421,14 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
     useEffect(() => () => dragCleanupRef.current?.(), []);
 
     const resizeSash = useCallback(
-      (sashIndex: number, delta: number) => {
+      (sashIndex: number, delta: number, reason: SplitViewLayoutReason) => {
         const current = layoutRef.current;
         if (!current) {
           return null;
         }
         const next = resizeAtSash(current, sashIndex, delta);
         if (!sameSizes(current.sizes, next.sizes)) {
-          publishLayout(next);
+          publishLayout(next, reason);
         }
         return next;
       },
@@ -438,7 +452,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           startPosition: orientation === "horizontal" ? event.clientX : event.clientY,
         };
         document.body.classList.add("worksplit-resizing");
-        onResizeStart?.(createLayoutChange(layoutRef.current));
+        onLayout?.(createLayoutEvent(layoutRef.current, "pointer", "start"));
 
         const handleMove = (moveEvent: globalThis.PointerEvent) => {
           const drag = dragRef.current;
@@ -449,14 +463,24 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           const position = orientation === "horizontal" ? moveEvent.clientX : moveEvent.clientY;
           const delta = position - drag.startPosition;
           const snapped =
-            updateDragSnap(drag.snapBefore, delta, collapsePane, revealPane) ||
-            updateDragSnap(drag.snapAfter, delta, collapsePane, revealPane);
+            updateDragSnap(
+              drag.snapBefore,
+              delta,
+              (id, size) => collapsePane(id, size, "pointer", false),
+              (id, size) => revealPane(id, size, "pointer", false),
+            ) ||
+            updateDragSnap(
+              drag.snapAfter,
+              delta,
+              (id, size) => collapsePane(id, size, "pointer", false),
+              (id, size) => revealPane(id, size, "pointer", false),
+            );
           const next = resizeAtSash(drag.startLayout, drag.sashIndex, delta);
           if (snapped) {
             return;
           }
           if (!sameSizes(layoutRef.current?.sizes, next.sizes)) {
-            publishLayout(next);
+            publishLayout(next, "pointer");
           }
         };
 
@@ -474,7 +498,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           dragRef.current = null;
           cleanup();
           if (current) {
-            onResizeEnd?.(createLayoutChange(current));
+            onLayout?.(createLayoutEvent(current, "pointer", "commit"));
           }
         };
 
@@ -483,16 +507,7 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
         window.addEventListener("pointerup", handleEnd, { once: true });
         window.addEventListener("pointercancel", handleEnd, { once: true });
       },
-      [
-        collapsePane,
-        disabled,
-        onResizeEnd,
-        onResizeStart,
-        orientation,
-        paneElements,
-        publishLayout,
-        revealPane,
-      ],
+      [collapsePane, disabled, onLayout, orientation, paneElements, publishLayout, revealPane],
     );
 
     const startCollapsedDrag = useCallback(
@@ -518,11 +533,11 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
 
           const current = layoutRef.current;
           if (current?.visibleIds.includes(boundary.pane.id)) {
-            publishLayout(setPaneSize(current, boundary.pane.id, revealSize));
+            publishLayout(setPaneSize(current, boundary.pane.id, revealSize), "pointer");
             return;
           }
 
-          revealPane(boundary.pane.id, revealSize);
+          revealPane(boundary.pane.id, revealSize, "pointer", false);
         };
 
         const cleanup = () => {
@@ -533,14 +548,20 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           dragCleanupRef.current = null;
         };
 
-        const handleEnd = () => cleanup();
+        const handleEnd = () => {
+          const current = layoutRef.current;
+          cleanup();
+          if (current) {
+            onLayout?.(createLayoutEvent(current, "pointer", "commit"));
+          }
+        };
 
         dragCleanupRef.current = cleanup;
         window.addEventListener("pointermove", handleMove);
         window.addEventListener("pointerup", handleEnd, { once: true });
         window.addEventListener("pointercancel", handleEnd, { once: true });
       },
-      [disabled, orientation, publishLayout, revealPane],
+      [disabled, onLayout, orientation, publishLayout, revealPane],
     );
 
     const handleSashKeyDown = useCallback(
@@ -560,14 +581,14 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
           return;
         }
 
-        onResizeStart?.(createLayoutChange(current));
+        onLayout?.(createLayoutEvent(current, "keyboard", "start"));
         const step = event.shiftKey ? 50 : 10;
-        const next = resizeSash(sashIndex, direction * step);
+        const next = resizeSash(sashIndex, direction * step, "keyboard");
         if (next) {
-          onResizeEnd?.(createLayoutChange(next));
+          onLayout?.(createLayoutEvent(next, "keyboard", "commit"));
         }
       },
-      [disabled, onResizeEnd, onResizeStart, orientation, resizeSash],
+      [disabled, onLayout, orientation, resizeSash],
     );
 
     const handleCollapsedSashKeyDown = useCallback(
@@ -577,7 +598,12 @@ export const SplitView = forwardRef<SplitViewHandle, SplitViewProps>(
         }
 
         event.preventDefault();
-        revealPane(boundary.pane.id, restoredPaneSize(boundary.pane, sizeSnapshotRef.current));
+        revealPane(
+          boundary.pane.id,
+          restoredPaneSize(boundary.pane, sizeSnapshotRef.current),
+          "keyboard",
+          true,
+        );
       },
       [disabled, orientation, revealPane],
     );
@@ -928,12 +954,38 @@ function mergeVisibleSizes(
   return next;
 }
 
-function createLayoutChange(layout: SplitLayout): SplitViewLayoutChange {
+function createLayoutEvent(
+  layout: SplitLayout,
+  reason: SplitViewLayoutReason,
+  phase: SplitViewLayoutPhase,
+): SplitViewLayoutEvent {
   return {
     layout,
+    phase,
+    reason,
     sizeById: { ...layout.sizeById },
     sizes: layout.sizes.slice(),
   };
+}
+
+function validatePanes(panes: readonly PaneElement[]): PaneElement[] {
+  const ids = new Set<string>();
+  for (const pane of panes) {
+    const { id, minSize, maxSize } = pane.props;
+    if (!id.trim()) {
+      throw new Error("[Worksplit] Pane ids must be non-empty strings.");
+    }
+    if (ids.has(id)) {
+      throw new Error(`[Worksplit] Duplicate pane id "${id}".`);
+    }
+    if (minSize !== undefined && maxSize !== undefined && minSize > maxSize) {
+      throw new Error(
+        `[Worksplit] Pane "${id}" has minSize ${minSize} greater than maxSize ${maxSize}.`,
+      );
+    }
+    ids.add(id);
+  }
+  return [...panes];
 }
 
 function compactSizeSnapshot(
@@ -1084,7 +1136,7 @@ function useResizeObserver(
   useIsomorphicLayoutEffect(() => {
     const node = ref.current;
     if (!node || typeof ResizeObserver === "undefined") {
-      return;
+      return undefined;
     }
 
     const observer = new ResizeObserver((entries) => {

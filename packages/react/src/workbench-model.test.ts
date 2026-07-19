@@ -135,4 +135,29 @@ describe("workbench model", () => {
       visibleParts: undefined,
     });
   });
+
+  it("drops malformed persisted state instead of leaking it into runtime layout", () => {
+    const layout = normalizeLayout(
+      {
+        areaSizes: {
+          center: {
+            invalid: Number.NaN,
+            negative: -20,
+            valid: 240,
+          },
+        },
+        value: {
+          activeByPart: { primary: 42 as unknown as string },
+          version: 1,
+          visibleParts: { primary: "yes" as unknown as boolean },
+        },
+      },
+      undefined,
+      "bottom",
+    );
+
+    expect(layout.areaSizes?.center).toEqual({ valid: 240 });
+    expect(layout.value.activeByPart).toBeUndefined();
+    expect(layout.value.visibleParts).toBeUndefined();
+  });
 });

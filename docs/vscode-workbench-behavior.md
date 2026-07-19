@@ -35,7 +35,7 @@ can be shown or hidden. The core and React APIs both use the same part names.
 Implemented API:
 
 - `WorkbenchView.part`
-- `WorkbenchView.size`
+- `Workbench.partSizes`
 - `WorkbenchView.renderContent`
 - `WorkbenchView.defaultActive`
 - `WorkbenchView.defaultVisible`
@@ -153,15 +153,14 @@ Workbench layout is serializable:
 Runtime `WorkbenchValue` is normalized and complete. `WorkbenchValueSnapshot` is the partial shape
 used for persistence and initial values.
 
-The React `Workbench` can persist this state with `layoutStorageKey`. Stored layouts must use the
+The React `Workbench` can persist this state with `storageKey`. Stored layouts must use the
 current `WorkbenchLayout` shape.
 
 ## Panel Position
 
 The panel can be positioned at the bottom or on the right:
 
-- `panelPosition` controls it from the outside.
-- `defaultPanelPosition` sets uncontrolled initial position.
+- `defaultLayout.panelPosition` sets the uncontrolled initial position.
 - `togglePanelPosition` mirrors the common workbench command shape.
 - Changing position remounts the relevant split view so pane-id size snapshots can be applied
   cleanly to the new topology.
@@ -202,21 +201,19 @@ Current contract:
 - Visible sashes support keyboard resize with arrow keys.
 - Hidden boundary sashes support directional keyboard restore.
 - Activity items expose `aria-pressed`.
+- Editor tabs use roving focus, arrow/Home/End navigation, and linked `tab`/`tabpanel` semantics.
 
 Future work:
 
 - expose command labels for custom keybinding systems
-- emit richer resize/collapse event reasons
 - add roving focus for activity bar groups
 
 ## Backlog For Further VS Code Alignment
 
 - editor group split and merge model
 - drag-and-drop editor groups
-- panel position switching between bottom and right
 - zen/focus modes
 - primary side bar position left/right
 - secondary side bar independent activity targets
-- command registry and keybinding integration
 - hover affordances and delayed sash activation for dense UIs
 - view container badges and contextual menus
