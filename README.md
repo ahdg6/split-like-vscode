@@ -4,14 +4,13 @@ A small split-view workspace library inspired by VS Code and the `johnwalley/all
 
 This repo is intentionally split into DOM-free core logic and a React binding:
 
-- `app`: business frontend. Add business-only UI libraries and runtime dependencies here.
 - `packages/demo`: Vite 8 + React 19 demo with nested editor/workspace panes.
 - `@worksplit/core`: pane constraints, preferred sizes, proportional resize, sash drag math, value snapshots.
 - `@worksplit/react`: React components, ResizeObserver integration, pointer handling, CSS.
 
 pnpm workspaces manage package linking. Turbo coordinates package task graphs and local caching. The
-root package stays as the workspace orchestration layer; app dependencies belong in their own
-package files, primarily `app/package.json`.
+root package stays as the workspace orchestration layer; demo dependencies belong in the demo
+package.
 
 The VS Code-like behavior contract is tracked in
 [docs/vscode-workbench-behavior.md](./docs/vscode-workbench-behavior.md).
@@ -25,8 +24,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` starts the business frontend on port `5173`. Use `pnpm dev:demo` for the library demo
-on port `5174`.
+`pnpm dev` starts the library demo on port `5174`.
 
 ## Scripts
 

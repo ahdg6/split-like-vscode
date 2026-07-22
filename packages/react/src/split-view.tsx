@@ -29,8 +29,6 @@ import {
   type ReactNode,
 } from "react";
 
-import "./style.css";
-
 const PANE_COMPONENT = Symbol.for("@worksplit/react/pane");
 const COLLAPSED_REVEAL_THRESHOLD = 24;
 const DEFAULT_SNAP = false;

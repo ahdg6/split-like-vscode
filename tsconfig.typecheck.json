@@ -4,17 +4,10 @@
     "noEmit": true
   },
   "include": [
-    "app/src",
-    "app/vite.config.ts",
-    "packages/demo/src",
-    "packages/demo/vite.config.ts",
     "oxlint.config.ts",
-    "packages/core/src",
     "packages/core/tsdown.config.mts",
     "packages/core/vitest.config.mts",
-    "packages/react/src",
     "packages/react/tsdown.config.mts",
-    "packages/react/vitest.config.mts",
-    "vite.config.ts"
+    "packages/react/vitest.config.mts"
   ]
 }

@@ -11,14 +11,7 @@ export default defineConfig({
     builtin: true,
     node: true,
   },
-  ignorePatterns: [
-    "node_modules",
-    "dist",
-    "coverage",
-    "app/dist",
-    "packages/*/dist",
-    "**/*.tsbuildinfo",
-  ],
+  ignorePatterns: ["node_modules", "dist", "coverage", "packages/*/dist", "**/*.tsbuildinfo"],
   plugins: ["import", "jsx-a11y", "promise", "react", "typescript", "vitest", "unicorn", "oxc"],
   rules: {
     eqeqeq: "error",

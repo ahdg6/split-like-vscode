@@ -2,9 +2,7 @@
   "name": "@worksplit/core",
   "version": "0.1.0",
   "files": [
-    "dist",
-    "src/index.ts",
-    "src/workbench.ts"
+    "dist"
   ],
   "type": "module",
   "sideEffects": false,

@@ -5,7 +5,6 @@
     "pnpm-lock.yaml",
     "tsconfig.base.json",
     "tsconfig.typecheck.json",
-    "vite.config.ts",
     "packages/*/tsdown.config.mts",
     "packages/*/vitest.config.mts"
   ],

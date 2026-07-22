@@ -4,6 +4,7 @@ const config: ReturnType<typeof defineConfig> = defineConfig({
   minify: true,
   entry: {
     index: "src/index.ts",
+    style: "src/style.css",
   },
   outDir: "dist",
   format: "esm",

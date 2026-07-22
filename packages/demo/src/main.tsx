@@ -73,7 +73,7 @@ const views: WorkbenchView[] = [
     part: "panel",
     renderContent: () => (
       <pre className="terminalText">
-        pnpm dev:demo{"\n"}Local: http://localhost:5174/{"\n"}packages built in library mode
+        pnpm dev{"\n"}Local: http://localhost:5174/{"\n"}packages built in library mode
       </pre>
     ),
     title: "Terminal",
